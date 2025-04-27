@@ -34,9 +34,11 @@ class Recommand_Diet():
             if user_input:
                 with st.spinner("🤖 검색중..."):
                     plan = self.generate_meal_plan(user_input)
+                    meal_names = self.extract_meal_name(plan)
                     st.text_area("🍽️ 생성된 식단", plan, height=500)
                     st.subheader("🍴 식단 미리보기")
                     self.display_meal_images(plan)
+                    st.text_area("🍴 요약된 식단 목록", meal_names, height=300)
 
     def generate_meal_plan(self, user_input):
         prompt = f"""
