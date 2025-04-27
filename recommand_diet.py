@@ -8,7 +8,8 @@ class Recommand_Diet():
         self.api_key = None
         self.google_api_key = None
         self.setup_page()
-
+    
+    # 화면구성
     def setup_page(self):
         st.set_page_config(page_title="Plan M", page_icon="🥗")
         st.title("🥗 :red[Plan] M")
@@ -34,12 +35,11 @@ class Recommand_Diet():
             if user_input:
                 with st.spinner("🤖 검색중..."):
                     plan = self.generate_meal_plan(user_input)
-                    meal_names = self.extract_meal_name(plan)
                     st.text_area("🍽️ 생성된 식단", plan, height=500)
                     st.subheader("🍴 식단 미리보기")
                     self.display_meal_images(plan)
-                    st.text_area("🍴 요약된 식단 목록", meal_names, height=300)
-
+                    
+    # 식단 생성
     def generate_meal_plan(self, user_input):
         prompt = f"""
         기본적으로 {user_input}의 조건으로 식단을 만들고,
@@ -55,20 +55,8 @@ class Recommand_Diet():
             messages=[{"role": "user", "content": prompt}]
         )
         return response.choices[0].message.content
-
-    def search_image_url(self, menu, api_key):
-        client = Client(api_key=api_key)  # Client로 바꿈
-        params = {
-            "engine": "google",
-            "q": menu + " food",
-            "tbm": "isch",  # 이미지 검색 모드
-        }
-        results = client.search(params)
-        if "images_results" in results:
-            return results["images_results"][0]["thumbnail"]
-        else:
-            return None
-
+    
+    # 이미지 쵸시
     def display_meal_images(self, plan_text):
         lines = plan_text.splitlines()
         for line in lines:
@@ -76,19 +64,35 @@ class Recommand_Diet():
                 if ":" in line:
                     parts = line.split(":")
                     if len(parts) >= 2:
-                        menu = parts[1].strip().split()[0]
+                        menu_info = parts[1].strip()
+                        words = menu_info.split()
+
+                        # 메뉴 이름과 칼로리 분리
+                        if len(words) >= 2:
+                            menu = " ".join(words[:-1])  # 마지막 단어 빼고 모두 메뉴 이름
+                            calorie = words[-1]          # 마지막 단어를 칼로리로 가정
+                            full_menu_display = f"{menu} ({calorie})"
+                        else:
+                            menu = words[0]
+                            full_menu_display = menu
+
                         if menu:
-                            st.markdown(f"### 🍽️ {menu}")
+                            # 메뉴 + 칼로리 표시
+                            st.markdown(f"### 🍽️ {full_menu_display}")
+
+                            # 메뉴명 영어로 번역 후 이미지 검색
                             menu_eng = self.auto_translate_text(menu)
                             image_url = self.search_image_url(menu_eng, self.google_api_key)
                             if image_url:
-                                st.image(image_url, caption=menu)
+                                st.image(image_url, caption=full_menu_display)
                             else:
                                 st.warning(f"❗ {menu} 이미지 검색 실패")
 
+                            # 쿠팡 링크 연결
                             coupang_link = self.search_coupang_product(menu)
                             st.markdown(f"[🛒 {menu} 구매하러 가기]({coupang_link})")
 
+    # 번역(한글 → 영어)
     def auto_translate_text(self, text):
         url = "https://translate.googleapis.com/translate_a/single"
         params = {
@@ -105,27 +109,24 @@ class Recommand_Diet():
             return translated_text
         else:
             return text
-
+            
+    # 이미지 검색
+    def search_image_url(self, menu, api_key):
+        client = Client(api_key=api_key)  # Client로 바꿈
+        params = {
+            "engine": "google",
+            "q": menu + " food",
+            "tbm": "isch",  # 이미지 검색 모드
+        }
+        results = client.search(params)
+        if "images_results" in results:
+            return results["images_results"][0]["thumbnail"]
+        else:
+            return None
+    
+    # 구매 링크
     def search_coupang_product(self, query):
         return f"https://www.coupang.com/np/search?component=&q={query.replace(' ', '')}"
-
-    def extract_meal_name(self, plan_text):
-        meal_names = []
-        for line in plan_text.splitlines():
-            if any(meal in line for meal in ["아침", "점심", "저녁"]):
-                if ":" in line:
-                    parts = line.split(":")
-                    if len(parts) >= 2:
-                        menu = parts[1].strip()
-                        words = menu.split()
-                        if len(words) >= 2:
-                            menu = " ".join(words[:-1])
-                            calorie = words[-1]
-                            meal_name = f"{menu}({calorie})"
-                        else:
-                            meal_name = f"{menu}"
-                        meal_names.append(meal_name)
-        return "\n".join(meal_names)
 
 if __name__ == '__main__':
     app = Recommand_Diet()
