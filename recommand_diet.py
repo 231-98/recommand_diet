@@ -12,7 +12,7 @@ class Recommand_Diet():
     # 화면구성
     def setup_page(self):
         st.set_page_config(page_title="오늘의 식단", page_icon="🥗")
-        st.title("🥗 오늘의 :red[식단]")
+        st.title("오늘의 :red[식단]🥗")
 
         user_input = st.text_input("원하시는 조건을 입력해주세요! (일자, 예산, 목적 등)")
         meal_button = st.button("식단만들기")
